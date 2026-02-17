@@ -6,6 +6,19 @@ datasource db {
   provider = "sqlite"
 }
 
+// ユーザー（認証・権限管理）
+model User {
+  id        String   @id @default(cuid())
+  loginId   String   @unique // ログインID
+  email     String   @unique // メールアドレス
+  password  String   // ハッシュ化パスワード
+  name      String   // 表示名
+  role      String   @default("office") // "admin" or "office"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // 患者マスタ
 model Patient {
   id                  String           @id @default(cuid())

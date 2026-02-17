@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import AppBar from '@mui/material/AppBar';
-import Typography from '@mui/material/Typography';
 import ThemeRegistry from '@/components/ThemeRegistry';
-import Sidebar, { DRAWER_WIDTH } from '@/components/Sidebar';
+import SessionProvider from '@/components/SessionProvider';
+import MainLayout from '@/components/MainLayout';
 
 export const metadata: Metadata = {
   title: 'RakuWallet - 入院患者お小遣い管理',
@@ -25,35 +22,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <ThemeRegistry>
-          <Box sx={{ display: 'flex' }}>
-            <AppBar
-              position="fixed"
-              sx={{
-                width: `calc(100% - ${DRAWER_WIDTH}px)`,
-                left: `${DRAWER_WIDTH}px`,
-              }}
-            >
-              <Toolbar>
-                <Typography variant="h6" noWrap component="div">
-                  RakuWallet
-                </Typography>
-              </Toolbar>
-            </AppBar>
-            <Sidebar />
-            <Box
-              component="main"
-              sx={{
-                flexGrow: 1,
-                p: 3,
-                width: `calc(100% - ${DRAWER_WIDTH}px)`,
-              }}
-            >
-              <Toolbar />
-              {children}
-            </Box>
-          </Box>
-        </ThemeRegistry>
+        <SessionProvider>
+          <ThemeRegistry>
+            <MainLayout>{children}</MainLayout>
+          </ThemeRegistry>
+        </SessionProvider>
       </body>
     </html>
   );
