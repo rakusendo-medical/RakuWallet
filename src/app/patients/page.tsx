@@ -29,11 +29,9 @@ import {
   Select,
   FormControl,
   InputLabel,
-  Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import { formatDate } from '@/lib/format';
 
@@ -63,6 +61,7 @@ const emptyForm = {
   wardName: '',
   roomNumber: '',
   admittedAt: '',
+  dischargedAt: '',
   note: '',
 };
 
@@ -114,6 +113,7 @@ export default function PatientsPage() {
         wardName: patient.wardName,
         roomNumber: patient.roomNumber,
         admittedAt: patient.admittedAt ? patient.admittedAt.split('T')[0] : '',
+        dischargedAt: patient.dischargedAt ? patient.dischargedAt.split('T')[0] : '',
         note: patient.note,
       });
     } else {
@@ -141,31 +141,6 @@ export default function PatientsPage() {
 
       setDialogOpen(false);
       setSnackbar({ open: true, message: editingId ? '更新しました' : '登録しました', severity: 'success' });
-      fetchPatients();
-    } catch (e) {
-      setSnackbar({ open: true, message: (e as Error).message, severity: 'error' });
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('この患者を無効化しますか？')) return;
-
-    await fetch(`/api/patients/${id}`, { method: 'DELETE' });
-    setSnackbar({ open: true, message: '無効化しました', severity: 'success' });
-    fetchPatients();
-  };
-
-  const handleToggleStatus = async (patient: Patient) => {
-    const newStatus = patient.isActive ? '外来（退院済み）' : '入院中';
-    if (!confirm(`「${patient.name}」のステータスを「${newStatus}」に変更しますか？`)) return;
-
-    try {
-      const res = await fetch(`/api/patients/${patient.id}`, { method: 'PATCH' });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error);
-      }
-      setSnackbar({ open: true, message: `ステータスを「${newStatus}」に変更しました`, severity: 'success' });
       fetchPatients();
     } catch (e) {
       setSnackbar({ open: true, message: (e as Error).message, severity: 'error' });
@@ -222,6 +197,7 @@ export default function PatientsPage() {
               <TableCell>病棟</TableCell>
               <TableCell>病室</TableCell>
               <TableCell>入院日</TableCell>
+              <TableCell>退院日</TableCell>
               <TableCell>状態</TableCell>
               <TableCell align="center">操作</TableCell>
             </TableRow>
@@ -229,7 +205,7 @@ export default function PatientsPage() {
           <TableBody>
             {patients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={9} align="center">
                   患者が登録されていません
                 </TableCell>
               </TableRow>
@@ -242,26 +218,18 @@ export default function PatientsPage() {
                   <TableCell>{patient.wardName}</TableCell>
                   <TableCell>{patient.roomNumber}</TableCell>
                   <TableCell>{patient.admittedAt ? formatDate(patient.admittedAt) : '-'}</TableCell>
+                  <TableCell>{patient.dischargedAt ? formatDate(patient.dischargedAt) : '-'}</TableCell>
                   <TableCell>
-                    <Tooltip title="クリックでステータス切替">
-                      <Chip
-                        label={patient.isActive ? '入院中' : '外来（退院済み）'}
-                        color={patient.isActive ? 'success' : 'default'}
-                        size="small"
-                        onClick={() => handleToggleStatus(patient)}
-                        sx={{ cursor: 'pointer' }}
-                      />
-                    </Tooltip>
+                    <Chip
+                      label={patient.isActive ? '入院中' : '退院済み'}
+                      color={patient.isActive ? 'success' : 'default'}
+                      size="small"
+                    />
                   </TableCell>
                   <TableCell align="center">
                     <IconButton size="small" onClick={() => handleOpenDialog(patient)}>
                       <EditIcon fontSize="small" />
                     </IconButton>
-                    {patient.isActive && (
-                      <IconButton size="small" color="error" onClick={() => handleDelete(patient.id)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -321,14 +289,25 @@ export default function PatientsPage() {
                 fullWidth
               />
             </Box>
-            <TextField
-              label="入院日"
-              type="date"
-              value={form.admittedAt}
-              onChange={(e) => setForm({ ...form, admittedAt: e.target.value })}
-              InputLabelProps={{ shrink: true }}
-              fullWidth
-            />
+            <Box display="flex" gap={2}>
+              <TextField
+                label="入院日"
+                type="date"
+                value={form.admittedAt}
+                onChange={(e) => setForm({ ...form, admittedAt: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+              />
+              <TextField
+                label="退院日"
+                type="date"
+                value={form.dischargedAt}
+                onChange={(e) => setForm({ ...form, dischargedAt: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+                helperText={form.dischargedAt ? '退院日を入力すると退院済みになります' : ''}
+              />
+            </Box>
             <TextField
               label="備考"
               value={form.note}
