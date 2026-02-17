@@ -9,34 +9,99 @@ datasource db {
 
 // 患者マスタ
 model Patient {
-  id           String        @id @default(cuid())
-  patientCode  String        @unique // 患者番号（病院の管理番号）
-  name         String        // 氏名
-  nameKana     String        // 氏名カナ
-  wardName     String        @default("") // 病棟名
-  roomNumber   String        @default("") // 病室番号
-  admittedAt   DateTime?     // 入院日
-  dischargedAt DateTime?     // 退院日
-  isActive     Boolean       @default(true) // 有効フラグ
-  note         String        @default("") // 備考
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  transactions Transaction[]
+  id                  String           @id @default(cuid())
+  patientCode         String           @unique // 患者番号（病院の管理番号）
+  medicalRecordNumber String           @default("") // 電子カルテ番号
+  name                String           // 氏名
+  nameKana            String           // 氏名カナ
+  birthDate           DateTime?        // 生年月日
+  wardName            String           @default("") // 病棟名
+  roomNumber          String           @default("") // 病室番号
+  admittedAt          DateTime?        // 入院日
+  dischargedAt        DateTime?        // 退院日
+  isActive            Boolean          @default(true) // 有効フラグ
+  note                String           @default("") // 備考
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  transactions        Transaction[]
+  billingContacts     BillingContact[]
 }
 
-// 入出金取引
+// 商品マスタ
+model Product {
+  id               String            @id @default(cuid())
+  productCode      String            @unique // 商品コード
+  name             String            // 商品名
+  category         String            @default("") // カテゴリ
+  defaultPrice     Int               @default(0) // 標準単価
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  transactionItems TransactionItem[]
+}
+
+// 入出金取引（ヘッダー）
 model Transaction {
-  id          String          @id @default(cuid())
+  id          String            @id @default(cuid())
   patientId   String
-  patient     Patient         @relation(fields: [patientId], references: [id])
-  type        String          // "deposit" (入金) or "withdrawal" (出金)
-  amount      Int             // 金額（円）
-  description String          @default("") // 摘要
-  date        DateTime        // 取引日
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  patient     Patient           @relation(fields: [patientId], references: [id])
+  type        String            // "deposit" (入金) or "withdrawal" (出金)
+  amount      Int               // 金額合計（円）
+  description String            @default("") // 摘要
+  date        DateTime          // 取引日
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  items       TransactionItem[]
 
   @@index([patientId])
   @@index([date])
   @@index([patientId, date])
+}
+
+// 取引明細（商品単位）
+model TransactionItem {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     String?
+  product       Product?    @relation(fields: [productId], references: [id])
+  productName   String      @default("") // 商品名（スナップショット）
+  unitPrice     Int         // 単価
+  quantity      Int         @default(1) // 数量
+  subtotal      Int         // 小計（unitPrice × quantity）
+  createdAt     DateTime    @default(now())
+
+  @@index([transactionId])
+  @@index([productId])
+}
+
+// 締め処理
+model ClosingPeriod {
+  id        String   @id @default(cuid())
+  year      Int      // 年
+  month     Int      // 月
+  closedAt  DateTime @default(now()) // 締め実行日時
+  closedBy  String   @default("") // 締め実行者
+  note      String   @default("") // 備考
+  createdAt DateTime @default(now())
+
+  @@unique([year, month])
+}
+
+// 請求連絡記録
+model BillingContact {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  contactDate   DateTime // 連絡日
+  contactMethod String   @default("") // 連絡手段（電話・郵送・面談等）
+  contactTo     String   @default("") // 連絡先（ご家族名等）
+  amount        Int      @default(0) // 請求金額
+  content       String   @default("") // 連絡内容
+  status        String   @default("pending") // pending / contacted / confirmed
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([contactDate])
 }
