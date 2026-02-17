@@ -31,12 +31,12 @@ export default function RootLayout({
               position="fixed"
               sx={{
                 width: `calc(100% - ${DRAWER_WIDTH}px)`,
-                ml: `${DRAWER_WIDTH}px`,
+                left: `${DRAWER_WIDTH}px`,
               }}
             >
               <Toolbar>
                 <Typography variant="h6" noWrap component="div">
-                  入院患者 お小遣い管理システム
+                  RakuWallet
                 </Typography>
               </Toolbar>
             </AppBar>

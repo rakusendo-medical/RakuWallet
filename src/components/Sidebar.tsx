@@ -45,13 +45,16 @@ export default function Sidebar() {
         },
       }}
     >
-      <Toolbar>
+      <Toolbar sx={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', py: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AccountBalanceWalletIcon color="primary" fontSize="large" />
+          <AccountBalanceWalletIcon color="primary" />
           <Typography variant="h6" noWrap component="div" fontWeight="bold">
             RakuWallet
           </Typography>
         </Box>
+        <Typography variant="caption" color="text.secondary" noWrap sx={{ pl: 0.5 }}>
+          入院患者お小遣い管理システム
+        </Typography>
       </Toolbar>
       <Divider />
       <List>

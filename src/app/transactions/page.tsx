@@ -69,15 +69,23 @@ export default function TransactionsPage() {
     if (filterType) params.set('type', filterType);
 
     fetch(`/api/transactions?${params}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json();
+      })
       .then(setTransactions)
+      .catch((e) => console.error('transactions fetch error:', e))
       .finally(() => setLoading(false));
   }, [filterPatient, filterType]);
 
   useEffect(() => {
     fetch('/api/patients')
-      .then((res) => res.json())
-      .then(setPatients);
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json();
+      })
+      .then(setPatients)
+      .catch((e) => console.error('patients fetch error:', e));
   }, []);
 
   useEffect(() => {

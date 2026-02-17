@@ -52,8 +52,12 @@ export default function BalancesPage() {
   const fetchBalances = useCallback(() => {
     setLoading(true);
     fetch(`/api/balances?year=${year}&month=${month}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json();
+      })
       .then(setData)
+      .catch((e) => console.error('balances fetch error:', e))
       .finally(() => setLoading(false));
   }, [year, month]);
 

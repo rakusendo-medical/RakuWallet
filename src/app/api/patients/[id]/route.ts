@@ -6,15 +6,20 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const patient = await prisma.patient.findUnique({
-    where: { id: params.id },
-  });
+  try {
+    const patient = await prisma.patient.findUnique({
+      where: { id: params.id },
+    });
 
-  if (!patient) {
-    return NextResponse.json({ error: '患者が見つかりません' }, { status: 404 });
+    if (!patient) {
+      return NextResponse.json({ error: '患者が見つかりません' }, { status: 404 });
+    }
+
+    return NextResponse.json(patient);
+  } catch (e) {
+    console.error('[GET /api/patients/[id]]', e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
-
-  return NextResponse.json(patient);
 }
 
 // 患者情報更新
@@ -22,23 +27,28 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const body = await request.json();
+  try {
+    const body = await request.json();
 
-  const patient = await prisma.patient.update({
-    where: { id: params.id },
-    data: {
-      name: body.name,
-      nameKana: body.nameKana,
-      wardName: body.wardName ?? '',
-      roomNumber: body.roomNumber ?? '',
-      admittedAt: body.admittedAt ? new Date(body.admittedAt) : null,
-      dischargedAt: body.dischargedAt ? new Date(body.dischargedAt) : null,
-      isActive: body.isActive,
-      note: body.note ?? '',
-    },
-  });
+    const patient = await prisma.patient.update({
+      where: { id: params.id },
+      data: {
+        name: body.name,
+        nameKana: body.nameKana,
+        wardName: body.wardName ?? '',
+        roomNumber: body.roomNumber ?? '',
+        admittedAt: body.admittedAt ? new Date(body.admittedAt) : null,
+        dischargedAt: body.dischargedAt ? new Date(body.dischargedAt) : null,
+        isActive: body.isActive,
+        note: body.note ?? '',
+      },
+    });
 
-  return NextResponse.json(patient);
+    return NextResponse.json(patient);
+  } catch (e) {
+    console.error('[PUT /api/patients/[id]]', e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 // 患者削除（論理削除）
@@ -46,10 +56,15 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  await prisma.patient.update({
-    where: { id: params.id },
-    data: { isActive: false },
-  });
+  try {
+    await prisma.patient.update({
+      where: { id: params.id },
+      data: { isActive: false },
+    });
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error('[DELETE /api/patients/[id]]', e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 // 月末残高一覧取得
 export async function GET(request: NextRequest) {
+  try {
   const searchParams = request.nextUrl.searchParams;
   const year = Number(searchParams.get('year') || new Date().getFullYear());
   const month = Number(searchParams.get('month') || new Date().getMonth() + 1);
@@ -64,4 +65,8 @@ export async function GET(request: NextRequest) {
     totalDeposit: balances.reduce((acc, b) => acc + b.monthDeposit, 0),
     totalWithdrawal: balances.reduce((acc, b) => acc + b.monthWithdrawal, 0),
   });
+  } catch (e) {
+    console.error('[GET /api/balances]', e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }

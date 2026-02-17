@@ -47,8 +47,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetch('/api/dashboard')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json();
+      })
       .then(setData)
+      .catch((e) => console.error('Dashboard fetch error:', e))
       .finally(() => setLoading(false));
   }, []);
 

@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaLibSql } from '@prisma/adapter-libsql';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaLibSql({
+    url: process.env.TURSO_DATABASE_URL ?? 'file:./prisma/dev.db',
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  }),
+});
 
 async function main() {
   // 商品マスタ

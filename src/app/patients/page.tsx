@@ -71,8 +71,12 @@ export default function PatientsPage() {
     if (search) params.set('search', search);
 
     fetch(`/api/patients?${params}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json();
+      })
       .then(setPatients)
+      .catch((e) => console.error('patients fetch error:', e))
       .finally(() => setLoading(false));
   }, [search, showInactive]);
 
