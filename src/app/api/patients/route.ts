@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/lib/auth';
+import { writeAuditLog } from '@/lib/audit';
 
 // 患者一覧取得
 export async function GET(request: NextRequest) {
@@ -35,6 +38,7 @@ export async function GET(request: NextRequest) {
 // 患者新規登録
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
     const body = await request.json();
 
     const { patientCode, name, nameKana, wardName, roomNumber, admittedAt, note } = body;
@@ -66,6 +70,16 @@ export async function POST(request: NextRequest) {
         admittedAt: admittedAt ? new Date(admittedAt) : null,
         note: note || '',
       },
+    });
+
+    await writeAuditLog({
+      userId: (session?.user as any)?.id || 'unknown',
+      userName: session?.user?.name || 'unknown',
+      action: 'CREATE',
+      entity: 'Patient',
+      entityId: patient.id,
+      summary: `患者「${name}」(${patientCode}) を登録`,
+      detail: { patientCode, name, wardName, roomNumber },
     });
 
     return NextResponse.json(patient, { status: 201 });

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { writeAuditLog } from '@/lib/audit';
 
 // ユーザー更新（管理者のみ）
 export async function PUT(
@@ -61,6 +62,16 @@ export async function PUT(
     },
   });
 
+  await writeAuditLog({
+    userId: (session.user as any).id,
+    userName: session.user.name || '',
+    action: 'UPDATE',
+    entity: 'User',
+    entityId: params.id,
+    summary: `ユーザー「${user.name}」(${user.loginId}) を更新`,
+    detail: { loginId, email, name, role, isActive },
+  });
+
   return NextResponse.json(user);
 }
 
@@ -79,9 +90,19 @@ export async function DELETE(
     return NextResponse.json({ error: '自分自身は無効化できません' }, { status: 400 });
   }
 
-  await prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: params.id },
     data: { isActive: false },
+    select: { name: true, loginId: true },
+  });
+
+  await writeAuditLog({
+    userId: (session.user as any).id,
+    userName: session.user.name || '',
+    action: 'DELETE',
+    entity: 'User',
+    entityId: params.id,
+    summary: `ユーザー「${user.name}」(${user.loginId}) を無効化`,
   });
 
   return NextResponse.json({ success: true });

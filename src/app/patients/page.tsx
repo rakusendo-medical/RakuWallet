@@ -25,6 +25,11 @@ import {
   InputAdornment,
   Switch,
   FormControlLabel,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -45,6 +50,12 @@ interface Patient {
   note: string;
 }
 
+interface Ward {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
 const emptyForm = {
   patientCode: '',
   name: '',
@@ -57,6 +68,7 @@ const emptyForm = {
 
 export default function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -80,9 +92,17 @@ export default function PatientsPage() {
       .finally(() => setLoading(false));
   }, [search, showInactive]);
 
+  const fetchWards = useCallback(() => {
+    fetch('/api/wards')
+      .then((res) => res.json())
+      .then(setWards)
+      .catch((e) => console.error('wards fetch error:', e));
+  }, []);
+
   useEffect(() => {
     fetchPatients();
-  }, [fetchPatients]);
+    fetchWards();
+  }, [fetchPatients, fetchWards]);
 
   const handleOpenDialog = (patient?: Patient) => {
     if (patient) {
@@ -133,6 +153,23 @@ export default function PatientsPage() {
     await fetch(`/api/patients/${id}`, { method: 'DELETE' });
     setSnackbar({ open: true, message: '無効化しました', severity: 'success' });
     fetchPatients();
+  };
+
+  const handleToggleStatus = async (patient: Patient) => {
+    const newStatus = patient.isActive ? '外来（退院済み）' : '入院中';
+    if (!confirm(`「${patient.name}」のステータスを「${newStatus}」に変更しますか？`)) return;
+
+    try {
+      const res = await fetch(`/api/patients/${patient.id}`, { method: 'PATCH' });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error);
+      }
+      setSnackbar({ open: true, message: `ステータスを「${newStatus}」に変更しました`, severity: 'success' });
+      fetchPatients();
+    } catch (e) {
+      setSnackbar({ open: true, message: (e as Error).message, severity: 'error' });
+    }
   };
 
   if (loading) {
@@ -206,11 +243,15 @@ export default function PatientsPage() {
                   <TableCell>{patient.roomNumber}</TableCell>
                   <TableCell>{patient.admittedAt ? formatDate(patient.admittedAt) : '-'}</TableCell>
                   <TableCell>
-                    <Chip
-                      label={patient.isActive ? '入院中' : '退院'}
-                      color={patient.isActive ? 'success' : 'default'}
-                      size="small"
-                    />
+                    <Tooltip title="クリックでステータス切替">
+                      <Chip
+                        label={patient.isActive ? '入院中' : '外来（退院済み）'}
+                        color={patient.isActive ? 'success' : 'default'}
+                        size="small"
+                        onClick={() => handleToggleStatus(patient)}
+                        sx={{ cursor: 'pointer' }}
+                      />
+                    </Tooltip>
                   </TableCell>
                   <TableCell align="center">
                     <IconButton size="small" onClick={() => handleOpenDialog(patient)}>
@@ -256,12 +297,23 @@ export default function PatientsPage() {
               fullWidth
             />
             <Box display="flex" gap={2}>
-              <TextField
-                label="病棟名"
-                value={form.wardName}
-                onChange={(e) => setForm({ ...form, wardName: e.target.value })}
-                fullWidth
-              />
+              <FormControl fullWidth>
+                <InputLabel>病棟</InputLabel>
+                <Select
+                  value={form.wardName}
+                  label="病棟"
+                  onChange={(e) => setForm({ ...form, wardName: e.target.value })}
+                >
+                  <MenuItem value="">
+                    <em>未選択</em>
+                  </MenuItem>
+                  {wards.map((ward) => (
+                    <MenuItem key={ward.id} value={ward.name}>
+                      {ward.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <TextField
                 label="病室番号"
                 value={form.roomNumber}

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { writeAuditLog } from '@/lib/audit';
 
 // ユーザー一覧取得（管理者のみ）
 export async function GET() {
@@ -73,6 +74,16 @@ export async function POST(request: NextRequest) {
       isActive: true,
       createdAt: true,
     },
+  });
+
+  await writeAuditLog({
+    userId: (session.user as any).id,
+    userName: session.user.name || '',
+    action: 'CREATE',
+    entity: 'User',
+    entityId: user.id,
+    summary: `ユーザー「${name}」(${loginId}) を登録`,
+    detail: { loginId, email, name, role: role || 'office' },
   });
 
   return NextResponse.json(user, { status: 201 });

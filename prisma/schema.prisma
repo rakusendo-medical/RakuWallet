@@ -39,6 +39,15 @@ model Patient {
   billingContacts     BillingContact[]
 }
 
+// 病棟マスタ
+model Ward {
+  id        String   @id @default(cuid())
+  name      String   @unique // 病棟名
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // 商品マスタ
 model Product {
   id               String            @id @default(cuid())
@@ -98,6 +107,23 @@ model ClosingPeriod {
   createdAt DateTime @default(now())
 
   @@unique([year, month])
+}
+
+// 操作ログ
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String   // 操作ユーザーID
+  userName   String   @default("") // 操作ユーザー名
+  action     String   // CREATE / UPDATE / DELETE
+  entity     String   // 対象テーブル名（Patient, Transaction, etc.）
+  entityId   String   // 対象レコードID
+  summary    String   @default("") // 操作概要
+  detail     String   @default("") // 変更内容の詳細（JSON）
+  createdAt  DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 // 請求連絡記録
