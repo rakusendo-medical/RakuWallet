@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/lib/auth';
+import { writeAuditLog } from '@/lib/audit';
 
 // 取引一覧取得
 export async function GET(request: NextRequest) {
@@ -49,6 +52,7 @@ export async function GET(request: NextRequest) {
 // 取引新規登録
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
     const body = await request.json();
 
     const { patientId, type, amount, description, date } = body;
@@ -87,6 +91,17 @@ export async function POST(request: NextRequest) {
           select: { name: true, patientCode: true },
         },
       },
+    });
+
+    const typeLabel = type === 'deposit' ? '入金' : '出金';
+    await writeAuditLog({
+      userId: (session?.user as any)?.id || 'unknown',
+      userName: session?.user?.name || 'unknown',
+      action: 'CREATE',
+      entity: 'Transaction',
+      entityId: transaction.id,
+      summary: `${transaction.patient.patientCode} ${transaction.patient.name} の${typeLabel} ¥${amount}`,
+      detail: { patientId, type, amount, description, date },
     });
 
     return NextResponse.json(transaction, { status: 201 });

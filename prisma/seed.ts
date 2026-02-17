@@ -40,6 +40,17 @@ async function main() {
 
   console.log('Users seeded: admin / admin123, jimu01 / office123');
 
+  // 病棟マスタ
+  const wardNames = ['第一病棟', '第二病棟'];
+  for (const wardName of wardNames) {
+    await prisma.ward.upsert({
+      where: { name: wardName },
+      update: {},
+      create: { name: wardName },
+    });
+  }
+  console.log('Wards seeded: 第一病棟, 第二病棟');
+
   // 商品マスタ
   const products = [
     { productCode: 'G-001', name: 'お茶（500ml）', category: '飲料', defaultPrice: 150 },
