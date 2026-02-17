@@ -1,9 +1,8 @@
 {
   "name": "RakuWallet - 入院患者お小遣い管理",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bookworm",
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {}
-  },
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": {
@@ -13,18 +12,19 @@
   },
   "postCreateCommand": "npm install && npx prisma generate && npx prisma db push && npm run db:seed",
   "postStartCommand": "npm run dev",
+  "remoteUser": "node",
   "customizations": {
     "vscode": {
       "extensions": [
         "Prisma.prisma",
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "bradlc.vscode-tailwindcss"
+        "esbenp.prettier-vscode"
       ],
       "settings": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true,
-        "editor.tabSize": 2
+        "editor.tabSize": 2,
+        "terminal.integrated.defaultProfile.linux": "bash"
       }
     }
   }
