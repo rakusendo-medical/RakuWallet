@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient({
   adapter: new PrismaLibSql({
@@ -9,6 +10,36 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
+  // 初期ユーザー（管理者 + 事務）
+  const adminPassword = await bcrypt.hash('admin123', 10);
+  const officePassword = await bcrypt.hash('office123', 10);
+
+  await prisma.user.upsert({
+    where: { loginId: 'admin' },
+    update: {},
+    create: {
+      loginId: 'admin',
+      email: 'admin@rakuwallet.local',
+      password: adminPassword,
+      name: '管理者',
+      role: 'admin',
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { loginId: 'jimu01' },
+    update: {},
+    create: {
+      loginId: 'jimu01',
+      email: 'jimu01@rakuwallet.local',
+      password: officePassword,
+      name: '事務 太郎',
+      role: 'office',
+    },
+  });
+
+  console.log('Users seeded: admin / admin123, jimu01 / office123');
+
   // 商品マスタ
   const products = [
     { productCode: 'G-001', name: 'お茶（500ml）', category: '飲料', defaultPrice: 150 },
