@@ -2,10 +2,27 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 
-// 初回セットアップ用API（User テーブルにデータを投入）
+// 初回セットアップ用API（テーブル作成 + シードデータ投入）
 // ブラウザから /api/seed にアクセスして実行
 export async function GET() {
   try {
+    // User テーブルを作成（存在しない場合）
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "User" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "loginId" TEXT NOT NULL,
+        "email" TEXT NOT NULL,
+        "password" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "role" TEXT NOT NULL DEFAULT 'office',
+        "isActive" BOOLEAN NOT NULL DEFAULT true,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_loginId_key" ON "User"("loginId")`);
+    await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email")`);
+
     // 既にユーザーが存在するかチェック
     const count = await prisma.user.count();
     if (count > 0) {
