@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 患者マスタ
+model Patient {
+  id           String        @id @default(cuid())
+  patientCode  String        @unique // 患者番号（病院の管理番号）
+  name         String        // 氏名
+  nameKana     String        // 氏名カナ
+  wardName     String        @default("") // 病棟名
+  roomNumber   String        @default("") // 病室番号
+  admittedAt   DateTime?     // 入院日
+  dischargedAt DateTime?     // 退院日
+  isActive     Boolean       @default(true) // 有効フラグ
+  note         String        @default("") // 備考
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+}
+
+// 入出金取引
+model Transaction {
+  id          String          @id @default(cuid())
+  patientId   String
+  patient     Patient         @relation(fields: [patientId], references: [id])
+  type        String          // "deposit" (入金) or "withdrawal" (出金)
+  amount      Int             // 金額（円）
+  description String          @default("") // 摘要
+  date        DateTime        // 取引日
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([patientId])
+  @@index([date])
+  @@index([patientId, date])
+}
