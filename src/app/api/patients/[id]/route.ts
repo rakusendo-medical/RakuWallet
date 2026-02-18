@@ -34,6 +34,9 @@ export async function PUT(
     const session = await getServerSession(authOptions);
     const body = await request.json();
 
+    const dischargedAt = body.dischargedAt ? new Date(body.dischargedAt) : null;
+    const isActive = !dischargedAt;
+
     const patient = await prisma.patient.update({
       where: { id: params.id },
       data: {
@@ -42,8 +45,8 @@ export async function PUT(
         wardName: body.wardName ?? '',
         roomNumber: body.roomNumber ?? '',
         admittedAt: body.admittedAt ? new Date(body.admittedAt) : null,
-        dischargedAt: body.dischargedAt ? new Date(body.dischargedAt) : null,
-        isActive: body.isActive,
+        dischargedAt,
+        isActive,
         note: body.note ?? '',
       },
     });
